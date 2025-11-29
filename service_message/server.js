@@ -2,16 +2,17 @@ const express = require('express');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 
 dotenv.config({ path: './config/.env' });
 
-const app = express(); // Initialisation de 'app'
+const app = express();
 const port = process.env.PORT || 5003;
 
-app.use(cors()); // Utilisation de CORS
-app.use(express.json()); // Middleware pour parser le corps des requêtes JSON
+app.use(cors());
+app.use(express.json());
 
-// Connexion à MongoDB
+// --- Connexion MongoDB ---
 const connectDb = async () => {
     try {
         const con = await mongoose.connect(process.env.MONGODB_URI, {
@@ -26,10 +27,19 @@ const connectDb = async () => {
 
 connectDb();
 
-// Routes
+// --- Routes API ---
 const DeptRoutes = require('./routes/dept');
 app.use('/dept', DeptRoutes);
 
+// --- Servir frontend statique ---
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// Catch-all route pour index.html
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
+// --- Lancer le serveur ---
 app.listen(port, () => {
     console.log(`Departement running on port ${port}`);
 });
