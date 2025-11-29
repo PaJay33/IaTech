@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 dotenv.config({ path: './config/.env' });
 
@@ -15,10 +16,7 @@ app.use(express.json());
 // --- Connexion MongoDB ---
 const connectDb = async () => {
     try {
-        const con = await mongoose.connect(process.env.MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+        const con = await mongoose.connect(process.env.MONGODB_URI);
         console.log(`Connected to MongoDB : ${con.connection.host}`);
     } catch (error) {
         console.log(`MongoDB error : ${error}`);
@@ -31,15 +29,23 @@ connectDb();
 const DeptRoutes = require('./routes/dept');
 app.use('/dept', DeptRoutes);
 
-// --- Servir frontend statique ---
-app.use(express.static(path.join(__dirname, '../frontend')));
+// --- Chemin frontend ---
+const frontendPath = path.join(__dirname, '../frontend');
 
-// Catch-all route pour index.html
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
+// Vérifier que le dossier frontend existe
+if (!fs.existsSync(frontendPath)) {
+    console.warn('⚠️ Dossier frontend introuvable. Vérifie le chemin ou copie le dossier dans Render.');
+} else {
+    // Servir les fichiers statiques
+    app.use(express.static(frontendPath));
 
-// --- Lancer le serveur ---
+    // Catch-all pour index.html
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(frontendPath, 'index.html'));
+    });
+}
+
+// --- Lancer serveur ---
 app.listen(port, () => {
     console.log(`Departement running on port ${port}`);
 });
